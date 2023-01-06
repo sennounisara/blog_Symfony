@@ -41,7 +41,9 @@ class BlogController extends AbstractController{
             [
                 "page" => $page,
                 "limit"=> $limit,
-                "data" => self::POSTS
+                "data" => array_map(function (BlogPost $item){
+                    return $this->generateUrl('blog_by_slug', ['slag' => $item->getSlag()]);
+                } ,$items)
             ]
         );
     }
@@ -66,20 +68,20 @@ class BlogController extends AbstractController{
     }
 
     /**
-     * @Route("/{id}", name="blog_by_id" )
+     * @Route("/post/{id}", name="blog_by_id" )
      */
-    public function post($id){
-        return new JsonResponse(
-            array_search($id, array_column(self::POSTS,'id'))
+    public function post(ManagerRegistry $doctrine, $id){
+        return $this->json(
+            $doctrine->getRepository(BlogPost::class)->find($id)
         );
     }
 
     /**
-     * @Route("/{slug}", name="blog_by_slug" )
+     * @Route("/{slag}", name="blog_by_slug" )
      */
-    public function postBySlug($slug){
-        return new JsonResponse(
-            array_search($slug, array_column(self::POSTS,'slug'))
+    public function postBySlug(ManagerRegistry $doctrine, $slag){
+        return $this->json(
+            $doctrine->getRepository(BlogPost::class)->findBy(["slag" => $slag])
         );
     }
 
