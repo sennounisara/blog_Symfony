@@ -11,24 +11,13 @@ use Symfony\Component\Serializer\Serializer;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @Route("/blog", name="blog_page" )
  */
 class BlogController extends AbstractController{
-
-    private const POSTS = [
-        [
-            'id' => 1,
-            'slug' => 'hello-world',
-            'title'=> 'HELLO WORLD',
-        ],
-        [
-            'id' => 2,
-            'slug' => 'hello-01',
-            'title'=> 'HELLO 01',
-        ]
-    ];
 
     /**
      * @Route("/", name="blog_list", defaults={"page": 1},requirements={"page"="\d+"} )
@@ -41,9 +30,7 @@ class BlogController extends AbstractController{
             [
                 "page" => $page,
                 "limit"=> $limit,
-                "data" => array_map(function (BlogPost $item){
-                    return $this->generateUrl('blog_by_slug', ['slag' => $item->getSlag()]);
-                } ,$items)
+                "data" => $items 
             ]
         );
     }
@@ -68,21 +55,34 @@ class BlogController extends AbstractController{
     }
 
     /**
-     * @Route("/post/{id}", name="blog_by_id" )
+     * @Route("/post/{id}", name="blog_by_id" , methods={"GET"} )
      */
-    public function post(ManagerRegistry $doctrine, $id){
+    public function post(BlogPost $post){
         return $this->json(
-            $doctrine->getRepository(BlogPost::class)->find($id)
+            // It's the same as doing find($id) on repository
+            $post
         );
     }
 
     /**
      * @Route("/{slag}", name="blog_by_slug" )
      */
-    public function postBySlug(ManagerRegistry $doctrine, $slag){
+    public function postBySlug(BlogPost $post){
         return $this->json(
-            $doctrine->getRepository(BlogPost::class)->findBy(["slag" => $slag])
+            // It's the same as doing findBy(['slag' => contents of {slag}]) on repository
+            $post
         );
+    }
+
+    /**
+     * @Route("/post/{id}", name="delete_blog_by_id", methods={"DELETE"} )
+     */
+    public function delete(ManagerRegistry $doctrine,BlogPost $post){
+        $entityManager = $doctrine->getManager();
+        $entityManager->remove($post);
+        $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
 }
